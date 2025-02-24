@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Image/Video Viewer</title>
-  <!-- 2/23/25 -->
-<style>
+  <!-- 2/24/25 -->
+  <style>
 /*****************/ 	  
 /* Global Styles */
 /*****************/ 
@@ -15,6 +15,7 @@
       font-family: sans-serif;
       overflow: hidden;
     }
+    
     
     
     
@@ -135,49 +136,103 @@
 	  height: calc(100% - 40px);
 	  background-color: #555;
 	  overflow-y: auto;
-	  padding: 10px;
+	  padding: 10px 0px 10px 0px;
 	  transition: width 0.3s;
 	  z-index: 20;
+	  margin-top: 0;
+	  /*border: 2px solid orange;*/
 	}
-	/* Sticky Nav Controls (Side-by-Side Buttons) */
+
 	#nav-controls {
-	  position: sticky;
-	  top: 0;
-	  height:40px;
+	  position: fixed;
+	  top: 50px;
+	  height: 40px;
 	  background-color: #555;
-	  padding: 5px 0;
+	  padding: 0;
+	  margin: 5px;
 	  z-index: 10;
 	  display: flex;
 	  justify-content: space-between;
 	  gap: 4px;
+	  width: 13%; /* Default width when expanded */
+	  transition: width 0.3s ease-in-out; /* Smooth transition */
+	  /*border: 2px solid red;*/
 	}
+	
+	#nav-controls button {
+	  margin: auto;
+	  padding: 5px;
+	  width: 80px;
+	  transition: width 0.3s ease-in-out; /* Smooth button transition */
+	  /*border: 2px solid blue;*/
+	}
+	
+	#toggle-nav {
+	  width: 50%; /* Default width when expanded (half of nav-controls) */
+	}
+
 	#nav-current {
 	  position: sticky;
-	  top: 40px;
+	  top: 50px;
 	  left: 0;
 	  z-index: 10;
-	  width: 100%;
-	  padding: 5px;
+	  width: 95%;
+	  height: 24px;
+	  padding: 5px 5px 10px;
+	  margin: 0px 5px 0px;
 	  background-color: lightgrey;
 	  color: blue;
 	  font-weight: bold;
-	  border-bottom: 4px solid #000;
+	  /* border-bottom: 4px solid #000; */
+	  /*border: 2px solid black;*/
 	}
+
+	/* Collapsed state */
 	#nav-pane.collapsed {
 	  width: 50px;
 	}
-	#nav-pane button {
-	  width: 40%;
-	  margin-bottom: 10px;
+	
+	#nav-pane.collapsed #nav-controls {
+	  width: 40px; /* Match the collapsed nav width */
 	}
-    #nav-pane ul { list-style: none; padding-left: 0; }
+	
+	#nav-pane.collapsed #toggle-nav {
+	  width: 42px; /* Fixed width to fit within 50px with margins */
+	}
+
+	#dirtree-box {
+		
+	}
+	
+    #nav-pane ul { 
+	  display: -webkit-box; display: -moz-box; display: -ms-box; display: box; -webkit-box-orient: vertical; -moz-box-orient: vertical; -ms-box-orient: vertical; box-orient: vertical;
+	  list-style: none;
+	  position: fixed;
+	  overflow-y: auto;
+	  top: 140px;
+	  padding: 0px;
+	  margin: 0 0 0 5px;
+	  width: 14%;
+	  height: 80%;
+	  text-align: left;
+	  white-space: nowrap
+	  /*border: 2px solid white;*/
+	}
     #nav-pane li {
+	/*
       display: flex;
       align-items: center;
+    */
+      display: inline-block;
+      text-align: left;
       padding: 5px;
       cursor: pointer;
     }
     #nav-pane li svg { margin-right: 5px; }
+    /* Add this CSS rule to ensure each list item is on a new line */
+    #tree-list li {
+      display: block; /* Ensures each li is on a new line */
+    }
 
 
 
@@ -355,21 +410,28 @@
 	  cursor: grabbing;
 	}
 
-	#fullscreen-controls {
-      position: absolute;
-      top: 20px;
-      left: 95%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.5);
-      padding: 10px;
-      border-radius: 5px;
-	}
 
-	#slideshow-button {
-	  color: white;
-	  background: black;
-	  filter: drop-shadow(4px 4px 6px #000000);
-	}
+
+/**************************/
+/* Slideshow Notification */
+/**************************/
+    #slideshow-notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      pointer-events: none;
+    }
+    #slideshow-notification.visible {
+      opacity: 1;
+    }
   </style>
 </head>
 
@@ -402,6 +464,10 @@
       </div>
     </div>
     <input type="text" id="search-bar" placeholder="Search files...">
+    <div id="ss-interval">
+        <label for="slideshow-interval">Slideshow Interval:</label><br>
+        <input type="number" id="slideshow-interval" value="5" min="1" max="120" style="width: 40px;"> seconds
+    </div>
   </div>
 
 
@@ -480,6 +546,10 @@
           <td><span class="hover-container">Search Bar</span></td>
           <td>Search the loaded directory.</td>
         </tr>
+        <tr data-target="ss-interval">
+            <td><span class="hover-container">Slideshow Interval</span></td>
+            <td>Sets the interval between images in slideshow mode.</td>
+        </tr>
       </table>
     </div>
     
@@ -490,8 +560,8 @@
           <th colspan="2">Navigation Panel</th>
         </tr>
         <tr data-target="toggle-nav">
-          <td><span class="hover-container">Hide Nav<br>Nav</span></td>
-          <td>Colapses the Navigation Panel out of the way.</td>
+          <td><span class="hover-container">Hide Nav/Nav</span></td>
+          <td>Colapse/Restore the Navigation Panel.</td>
         </tr>
         <tr data-target="up-button">
           <td><span class="hover-container">Up</span></td>
@@ -499,11 +569,11 @@
         </tr>
         <tr data-target="nav-current">
           <td><span class="hover-container">Current Directory</span></td>
-          <td>Lists the name of current directory displayed.</td>
+          <td>Displays the name of currently loaded directory.</td>
         </tr>
         <tr data-target="tree-list">
           <td><span class="hover-container">Directory Tree</span></td>
-          <td>Lists the sub-directories located inside the current directory.<br>Click on a sub-directory to make it the current directory.</td>
+          <td>Lists the sub-directories inside the currently loaded directory.<br>Click a sub-directory to make it the current directory.</td>
         </tr>
       </table>
     </div>
@@ -561,6 +631,10 @@
           <td>Enter/Exit panning mode.</td>
         </tr>
         <tr>
+            <td>s</td>
+            <td>Start/Stop slideshow.</td>
+          </tr>
+        <tr>
           <td>Esc</td>
           <td>Exit full-screen mode and return to Main page.</td>
         </tr>
@@ -575,9 +649,7 @@
 <!----------------------------------------->
   <div id="fullscreen-viewer">
     <img id="fullscreen-image" src="" alt="Full Screen">
-    <div id="fullscreen-controls">
-        <button id="slideshow-button">Start Slideshow</button>
-    </div>
+    <div id="slideshow-notification"></div>
   </div>
   
   
@@ -590,14 +662,16 @@ let currentView = "images"; // "images" or "videos"
 let baseDirectory = "";     // Top-level folder from the selection
 let currentDirectory = "";  // Current folder (starts as baseDirectory)
 let thumbnailSize = 225;    // Initial thumbnail size
-let isNavCollapsed = false;
-let currentFullscreenIndex = 0;
-let isPanning = false;
-let panStart = { x: 0, y: 0 };
-let imageStart = { x: 0, y: 0 };
+let isNavCollapsed = false;      // Track if the navigation panel is collapsed
+let currentFullscreenIndex = 0;  // Track the current image index in fullscreen mode
+let isPanning = false;      // Track if panning is active
+let panStart = { x: 0, y: 0 }; // Track the starting position of the pan
+let imageStart = { x: 0, y: 0 }; // Track the starting position of the image
 let lastVisibleIndex = 0;  // Track the last visible thumbnail
 let totalProgress = 0;     // Track overall progress through directory
-let slideshowInterval = null; // Track the slideshow interval
+let slideshowInterval = 5; // Seconds between slides
+let slideshowTimer = null; // Separate variable for the interval ID
+let isSlideshowRunning = false; // Track if the slideshow is running
 
 // Virtual scrolling variables
 const CHUNK_SIZE = 50;      // Number of items to load at once
@@ -629,6 +703,7 @@ document.getElementById('directory-picker').addEventListener('change', function(
   currentChunk = 0;
   updateThumbnailsForCurrentDirectory();
   buildDirectoryTree();
+  document.getElementById('nav-current').textContent = currentDirectory.split('/').pop();
 });
 
 // Toggle Switch between Images and Videos
@@ -717,7 +792,17 @@ document.getElementById('search-bar').addEventListener('input', function() {
 function buildDirectoryTree() {
   const treeList = document.getElementById('tree-list');
   treeList.innerHTML = '';
+  
   document.getElementById("up-button").disabled = currentDirectory === baseDirectory;
+  if (currentDirectory === baseDirectory) {
+	document.getElementById("up-button").textContent = 'X';
+	document.getElementById("up-button").style.color = 'red';
+	document.getElementById("up-button").disabled
+  } else {
+	document.getElementById("up-button").textContent = 'UP';
+	document.getElementById("up-button").style.color = 'black';
+	document.getElementById("up-button").enabled
+  }
   
   let directories = new Set();
   
@@ -727,7 +812,7 @@ function buildDirectoryTree() {
     if (relPath.startsWith(currentDirectory + "/")) {
       let remainder = relPath.slice((currentDirectory + "/").length);
       let parts = remainder.split('/');
-      // Only add if it’s a directory (has sub-levels)
+      // Only add if it's a directory (has sub-levels)
       if (parts.length > 1 && parts[0]) {
         directories.add(parts[0]);
       }
@@ -735,7 +820,7 @@ function buildDirectoryTree() {
   });
   
   // Step 2: Populate the tree with sorted sub-directories
-  Array.from(directories).sort().forEach(subdir => {
+  Array.from(directories).sort((a, b) => a.localeCompare(b)).forEach(subdir => {
     let li = document.createElement('li');
     
     // Create folder icon SVG
@@ -767,7 +852,6 @@ function buildDirectoryTree() {
 
 // Handle Navigation Panel collapse/expand
 document.getElementById('toggle-nav').addEventListener('click', () => {
-	//console.log("Toggle Nav clicked");
   const nav = document.getElementById('nav-pane');
   const thumbContainer = document.getElementById('thumbnails-container');
   const toggleBtn = document.getElementById('toggle-nav');
@@ -778,7 +862,6 @@ document.getElementById('toggle-nav').addEventListener('click', () => {
     nav.classList.add('collapsed');
     thumbContainer.classList.add('nav-collapsed');
     toggleBtn.textContent = "Nav";
-    toggleBtn.style.width = "50px";
     document.getElementById('up-button').style.display = 'none';
     document.getElementById('nav-current').style.display = 'none';
     document.getElementById('tree-list').style.display = 'none';
@@ -786,7 +869,6 @@ document.getElementById('toggle-nav').addEventListener('click', () => {
     nav.classList.remove('collapsed');
     thumbContainer.classList.remove('nav-collapsed');
     toggleBtn.textContent = "Hide Nav";
-    toggleBtn.style.width = "40%";
     document.getElementById('up-button').style.display = 'block';
     document.getElementById('nav-current').style.display = 'block';
     document.getElementById('tree-list').style.display = 'block';
@@ -1067,6 +1149,10 @@ function adjustImageFit(img) {
 
 // Open full-screen view
 function openFullscreen(index) {
+  // Only stop slideshow if it wasn't already running
+  if (!isSlideshowRunning) {
+    stopSlideshow();
+  }
   isPanning = false;
   panStart = { x: 0, y: 0 };
   imageStart = { x: 0, y: 0 };
@@ -1093,11 +1179,11 @@ document.addEventListener("fullscreenchange", () => {
     document.getElementById('fullscreen-viewer').style.display = 'none';
     isPanning = false;
     panStart = null;
-    if (slideshowInterval) {
-        clearInterval(slideshowInterval);
-        slideshowInterval = null;
-        document.getElementById('slideshow-button').textContent = "Start Slideshow";
+    if (isSlideshowRunning) {
+        stopSlideshow();
     }
+  } else {
+    slideshowInterval = parseInt(document.getElementById('slideshow-interval').value) || 5;
   }
 });
 
@@ -1106,10 +1192,8 @@ document.addEventListener("webkitfullscreenchange", () => {
     document.getElementById('fullscreen-viewer').style.display = 'none';
     isPanning = false;
     panStart = null;
-    if (slideshowInterval) {
-        clearInterval(slideshowInterval);
-        slideshowInterval = null;
-        document.getElementById('slideshow-button').textContent = "Start Slideshow";
+    if (isSlideshowRunning) {
+        stopSlideshow();
     }
   }
 });
@@ -1117,6 +1201,9 @@ document.addEventListener("webkitfullscreenchange", () => {
 // Fullscreen navigation with mouse
 const fullscreenViewer = document.getElementById('fullscreen-viewer');
 fullscreenViewer.addEventListener('click', (e) => {
+  if (isSlideshowRunning) {
+    stopSlideshow();
+  }
   if (e.button === 0 && !isPanning) {
     currentFullscreenIndex = (currentFullscreenIndex - 1 + filesData.length) % filesData.length;
     openFullscreen(currentFullscreenIndex);
@@ -1125,6 +1212,9 @@ fullscreenViewer.addEventListener('click', (e) => {
 
 fullscreenViewer.addEventListener('contextmenu', (e) => {
   e.preventDefault();
+  if (isSlideshowRunning) {
+    stopSlideshow();
+  }
   if (!isPanning) {
     currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
     openFullscreen(currentFullscreenIndex);
@@ -1226,12 +1316,12 @@ document.addEventListener('keydown', (e) => {
         e.preventDefault();
         currentFullscreenIndex = (currentFullscreenIndex - 1 + filesData.length) % filesData.length;
         openFullscreen(currentFullscreenIndex);
-        break;
+        break; // Remove the stopSlideshow call here
       case "ArrowRight":
         e.preventDefault();
         currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
         openFullscreen(currentFullscreenIndex);
-        break;
+        break; // Remove the stopSlideshow call here
       case "Escape":
         if (document.exitFullscreen) {
           document.exitFullscreen();
@@ -1241,36 +1331,67 @@ document.addEventListener('keydown', (e) => {
         fullscreenViewer.style.display = 'none';
         break;
       case "p":
-		if (isPanning) {
+        if (isPanning) {
           isPanning = false;
           fullImage.classList.remove("grabbing");
           panStart = null;
-		} else {
+        } else {
           isPanning = true;
           fullImage.classList.add("grabbing");
-          // panStart will be set on mousemove
-		}
-		break;
+        }
+        break;
+      case "s":
+        e.preventDefault();
+        if (isSlideshowRunning) {
+          stopSlideshow();
+        } else {
+          startSlideshow();
+        }
+        break;
     }
   } else if (e.key === "Escape") {
     location.reload();
   }
 });
 
-// Add an event listener to the slideshow button to start/stop the slideshow
-document.getElementById('slideshow-button').addEventListener('click', function() {
-    if (slideshowInterval) {
-        clearInterval(slideshowInterval);
-        slideshowInterval = null;
-        this.textContent = "Start Slideshow";
-    } else {
-        slideshowInterval = setInterval(() => {
-            currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
-            openFullscreen(currentFullscreenIndex);
-        }, 5000); // 5 seconds per image
-        this.textContent = "Stop Slideshow";
-    }
-});
+
+
+/////////////////////////
+// SLIDESHOW FUNCTIONS //
+/////////////////////////
+
+// Function to stop the slideshow
+function stopSlideshow() {
+  if (isSlideshowRunning) {
+    clearInterval(slideshowTimer);
+    slideshowTimer = null;
+    isSlideshowRunning = false;
+    showNotification('Slideshow Stopped');
+  }
+}
+
+// Function to start the slideshow
+function startSlideshow() {
+  stopSlideshow(); // Clear any existing interval
+  isSlideshowRunning = true;
+  slideshowTimer = setInterval(() => {
+    currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
+    openFullscreen(currentFullscreenIndex);
+  }, slideshowInterval * 1000);
+  showNotification('Slideshow Started');
+}
+
+// Function to show a slideshow notification
+function showNotification(message, duration = 2000) {
+  const notification = document.getElementById('slideshow-notification');
+  notification.textContent = message;
+  notification.classList.add('visible');
+  
+  // Remove the notification after the specified duration
+  setTimeout(() => {
+    notification.classList.remove('visible');
+  }, duration);
+}
   </script>
 </body>
 </html>
