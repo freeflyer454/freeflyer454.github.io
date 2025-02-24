@@ -55,6 +55,9 @@
 	  display: flex;
 	  align-items: center;
 	  gap: 10px;
+	  padding: 5px;
+	  border: 1px solid darkgrey;
+	  border-radius: 8px;
 	}
 	.switch {
 	  position: relative;
@@ -67,14 +70,15 @@
 	  width: 0;
 	  height: 0;
 	}
-	.slider {
+	/* initial toggle switch */
+	.slider { 
 	  position: absolute;
 	  cursor: pointer;
 	  top: 0;
 	  left: 0;
 	  right: 0;
 	  bottom: 0;
-	  background-color: #888;
+	  background-color: blue;
 	  transition: 0.4s;
 	  border-radius: 20px;
 	}
@@ -133,19 +137,19 @@
 	  top: 40px;
 	  left: 0;
 	  width: 15%;
-	  height: calc(100% - 40px);
+	  height: calc(100% - 40px); /* (100% - Top Bar height) */
 	  background-color: #555;
 	  overflow-y: auto;
-	  padding: 10px 0px 10px 0px;
+	  padding: 5px 0px 10px 0px;
 	  transition: width 0.3s;
 	  z-index: 20;
 	  margin-top: 0;
-	  /*border: 2px solid orange;*/
+	  /* border: 2px solid orange; */
 	}
 
 	#nav-controls {
 	  position: fixed;
-	  top: 50px;
+	  top: 42px;
 	  height: 40px;
 	  background-color: #555;
 	  padding: 0;
@@ -156,7 +160,7 @@
 	  gap: 4px;
 	  width: 13%; /* Default width when expanded */
 	  transition: width 0.3s ease-in-out; /* Smooth transition */
-	  /*border: 2px solid red;*/
+	  /* border: 2px solid red; */
 	}
 	
 	#nav-controls button {
@@ -183,8 +187,7 @@
 	  background-color: lightgrey;
 	  color: blue;
 	  font-weight: bold;
-	  /* border-bottom: 4px solid #000; */
-	  /*border: 2px solid black;*/
+	  /* border: 2px solid black; */
 	}
 
 	/* Collapsed state */
@@ -209,22 +212,19 @@
 	  list-style: none;
 	  position: fixed;
 	  overflow-y: auto;
-	  top: 140px;
+	  top: 130px;
 	  padding: 0px;
 	  margin: 0 0 0 5px;
 	  width: 14%;
 	  height: 80%;
 	  text-align: left;
 	  white-space: nowrap
-	  /*border: 2px solid white;*/
+	  /* border: 2px solid white; */
 	}
     #nav-pane li {
-	/*
-      display: flex;
-      align-items: center;
-    */
       display: inline-block;
       text-align: left;
+      white-space: nowrap
       padding: 5px;
       cursor: pointer;
     }
@@ -560,7 +560,7 @@
           <th colspan="2">Navigation Panel</th>
         </tr>
         <tr data-target="toggle-nav">
-          <td><span class="hover-container">Hide Nav/Nav</span></td>
+          <td><span class="hover-container">Hide Nav / Nav</span></td>
           <td>Colapse/Restore the Navigation Panel.</td>
         </tr>
         <tr data-target="up-button">
@@ -586,7 +586,7 @@
         <tr>
         <tr>
           <td>Left Click on Thumbnail</td>
-          <td>Open image in full-screen mode.<br>Mouse-over for 3 seconds for file info.</td>
+          <td>Open image in full-screen mode.<br>Mouse-over for 2 seconds for file info.</td>
         </tr>
         <tr data-target="progress-bar">
           <td><span class="hover-container">Left Click on Navigation/Progress Bar</span></td>
@@ -631,9 +631,9 @@
           <td>Enter/Exit panning mode.</td>
         </tr>
         <tr>
-            <td>s</td>
-            <td>Start/Stop slideshow.</td>
-          </tr>
+          <td>s</td>
+          <td>Start/Stop slideshow.</td>
+        </tr>
         <tr>
           <td>Esc</td>
           <td>Exit full-screen mode and return to Main page.</td>
@@ -995,13 +995,13 @@ function loadThumbnails() {
     tooltip.className = "file-info-tooltip";
     wrapper.appendChild(tooltip);
     
-    // Set up hover events with a 3-second delay to show the tooltip
+    // Set up hover events with a 2-second delay to show the tooltip
     let hoverTimer = null;
     wrapper.addEventListener('mouseenter', function() {
       hoverTimer = setTimeout(() => {
         tooltip.textContent = getFileInfo(file, mediaEl);
         tooltip.style.display = "block";
-      }, 3000);
+      }, 2000);
     });
     
     // Hide tooltip immediately on mouse leave
