@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image/Video Viewer</title>
+  <style>
+/*****************/ 	  
+/* Global Styles */
+/*****************/ 
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #333;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    
+    
+    
+/***********/   
+/* Top Bar */
+/***********/
+    #top-bar {
+      width: 100%;
+      height: 40px;
+      background-color: #444;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+    }
+    #top-bar > * { margin-right: 40px; }
+
+	/* Stylish Directory Button */
+    #directory-button {
+      padding: 2px 10px;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: white;
+      background-color: #444;
+      border: 3px solid #FF9800; /* Orange border */
+      border-radius: 8px; /* Rounded edges */
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+    }
+	#directory-button:hover {
+	  background-color: #FF9800; /* Button fills with border color on hover */
+	  color: black;
+	}
+
+	/* Toggle Switch */    
+	/* Toggle Switch Container */
+	#view-toggle {
+	  display: flex;
+	  align-items: center;
+	  gap: 10px;
+	}
+	.switch {
+	  position: relative;
+	  display: inline-block;
+	  width: 40px;
+	  height: 20px;
+	}
+	.switch input {
+	  opacity: 0;
+	  width: 0;
+	  height: 0;
+	}
+	.slider {
+	  position: absolute;
+	  cursor: pointer;
+	  top: 0;
+	  left: 0;
+	  right: 0;
+	  bottom: 0;
+	  background-color: #888;
+	  transition: 0.4s;
+	  border-radius: 20px;
+	}
+	.slider:before {
+	  position: absolute;
+	  content: "";
+	  height: 14px;
+	  width: 14px;
+	  left: 3px;
+	  bottom: 3px;
+	  background-color: white;
+	  transition: 0.4s;
+	  border-radius: 50%;
+	}
+	input:checked + .slider {
+	  background-color: #4CAF50;
+	}
+	input:checked + .slider:before {
+	  transform: translateX(20px);
+	}
+    
+	/* Progress Bar */
+    #progress-bar-container {
+      flex-grow: 1;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 10px;
+      background-color: LightGoldenRodYellow;
+      position: relative;
+      cursor: pointer;
+    }
+    #progress-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: black;
+      font-size: 16px;
+      font-weight: bolder;
+	}
+    #loaded-progress {
+      height: 10px;
+      background-color: LightGreen;
+      width: 0%;
+    }
+    .w3-round-xlarge{border-radius:25px!important}
+
+
+
+/*******************/
+/* Navigation Pane */
+/*******************/
+	#nav-pane {
+	  position: absolute;
+	  top: 40px;
+	  left: 0;
+	  width: 15%;
+	  height: calc(100% - 40px);
+	  background-color: #555;
+	  overflow-y: auto;
+	  padding: 10px;
+	  transition: width 0.3s;
+	  z-index: 20;
+	}
+	/* Sticky Nav Controls (Side-by-Side Buttons) */
+	#nav-controls {
+	  position: sticky;
+	  top: 0;
+	  height:40px;
+	  background-color: #555;
+	  padding: 5px 0;
+	  z-index: 10;
+	  display: flex;
+	  justify-content: space-between;
+	  gap: 4px;
+	}
+	#nav-current {
+	  position: sticky;
+	  top: 40px;
+	  left: 0;
+	  z-index: 10;
+	  width: 100%;
+	  padding: 5px;
+	  background-color: lightgrey;
+	  color: blue;
+	  font-weight: bold;
+	  border-bottom: 4px solid #000;
+	}
+	#nav-pane.collapsed {
+	  width: 50px;
+	}
+	#nav-pane button {
+	  width: 40%;
+	  margin-bottom: 10px;
+	}
+    #nav-pane ul { list-style: none; padding-left: 0; }
+    #nav-pane li {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      cursor: pointer;
+    }
+    #nav-pane li svg { margin-right: 5px; }
+
+
+
+/*********************/
+/* Instructions Page */
+/*********************/  
+    #instructions {
+	  position: relative;
+	  z-index: 10;
+	  width: 100%;
+	  margin: 10px auto 10px;
+	  text-align: center;
+	}
+    
+    /* Styling for the Instructions Header */
+    #instructions h1 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
+      color: white;
+    }
+    
+	/* Table Styling */
+	.instruction-table {
+	  width: 50%;
+	  margin: 10px auto;
+	  border-collapse: collapse;
+	}
+	.instruction-table th {
+	  background-color: BurlyWood;
+	  color: black;
+	  font-size: 1.2em;
+	  padding: 10px;
+	}
+	.instruction-table td {
+	  background-color: DarkOliveGreen;
+	  padding: 8px;
+	  border: 1px solid #000;
+	}
+	.instruction-table td:first-child {
+	  font-weight: bold;
+	}
+	
+    /* Glow Effect Styles */
+    /* Wrap left-column cell text in a container that we can glow */
+    .hover-container {
+      display: inline-block;
+      position: relative;
+      padding: 2px 4px;
+    }
+    /* When the glow class is active, add an intense red outline and drop shadow */
+    .hover-container.glow {
+      outline: 3px solid #ff0000;
+      filter: drop-shadow(0 0 10px #ff0000) drop-shadow(0 0 20px #ff0000);
+    }
+    /* Also, for any target element we want to glow, apply the same glow style */
+    .glow {
+      outline: 3px solid #ff0000 !important;
+      filter: drop-shadow(0 0 10px #ff0000) drop-shadow(0 0 20px #ff0000);
+    }
+
+    /* Tab Styles */
+    input[type="radio"] {
+      display: none;
+    }
+    .tab-headers {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    .tab-headers label {
+      padding: 10px 20px;
+      background-color: #555;
+      color: #fff;
+      cursor: pointer;
+      border: 1px solid #666;
+      margin: 0 5px;
+    }
+    .tab-headers label:hover {
+      background-color: #666;
+    }
+    #tab1:checked ~ .tab-headers label[for="tab1"],
+    #tab2:checked ~ .tab-headers label[for="tab2"],
+    #tab3:checked ~ .tab-headers label[for="tab3"],
+    #tab4:checked ~ .tab-headers label[for="tab4"] {
+      background-color: #777;
+      font-weight: bold;
+    }
+	.tab-content {
+	  display: none;
+	}
+	#tab1:checked ~ #content1,
+	#tab2:checked ~ #content2,
+	#tab3:checked ~ #content3,
+	#tab4:checked ~ #content4 {
+	  display: block;
+	}
+    
+    
+
+/************************/
+/* Thumbnails Container */
+/************************/
+	#thumbnails-container {
+	  position: absolute;
+	  top: 40px;
+	  left: 15%;
+	  right: 0;
+	  bottom: 0;
+	  overflow-y: auto;
+	  padding: 10px;
+	  display: flex;
+	  flex-wrap: wrap;
+	  gap: 10px;
+	  transition: left 0.3s;
+	  z-index: 1; /* Added to keep it below #instructions */
+	}
+    #thumbnails-container.nav-collapsed {
+      left: 50px;
+    }
+    .thumbnail {
+      object-fit: cover;
+      cursor: pointer;
+      background: #222;
+    }
+    
+	/* Lazy loading placeholder */
+	.thumbnail.lazy {
+	  opacity: 0;
+	  transition: opacity 0.3s ease-in;
+	}
+	
+	.thumbnail.lazy.loaded {
+	  opacity: 1;
+	}
+	
+	.file-info-tooltip {
+	  position: absolute;
+	  bottom: 10px;
+	  left: 10px;
+	  background: rgba(0, 0, 0, 0.7);
+	  color: #fff;
+	  padding: 5px;
+	  border-radius: 5px;
+	  font-size: 12px;
+	  white-space: pre;  /* preserve line breaks */
+	  z-index: 100;
+	  display: none;
+	}
+
+
+
+/*********************/
+/* Fullscreen Viewer */
+/*********************/
+    #fullscreen-viewer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    #fullscreen-image {
+      transition: transform 0.3s;
+      cursor: grab;
+    }
+    #fullscreen-image.grabbing {
+	  cursor: grabbing; /* When panning */
+	}
+	
+	.grabbing {
+	  cursor: grabbing;
+	}
+
+	#fullscreen-controls {
+      position: absolute;
+      top: 20px;
+      left: 95%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+	}
+
+	#slideshow-button {
+	  color: white;
+	  background: black;
+	  filter: drop-shadow(4px 4px 6px #000000);
+	}
+  </style>
+</head>
+
+
+
+<body>
+<!------------------>
+<!-- Top Slim Bar -->
+<!------------------>
+  <div id="top-bar">
+    <button id="directory-button">Directory</button>
+    
+    <div id="view-toggle">
+      <span>Images</span>
+      <label class="switch">
+        <input type="checkbox" id="view-switch">
+        <span class="slider"></span>
+      </label>
+      <span>Videos</span>
+    </div>
+    
+    <span id="directory-info">0 / 0</span>
+    
+    <input type="range" id="thumbnail-size" min="100" max="350" value="225">
+    
+    <div id="progress-bar-container">
+      <div class="w3-round-xlarge" id="progress-bar">
+        <div class="w3-round-xlarge" id="loaded-progress"></div>
+        <span id="progress-label">0%</span>
+      </div>
+    </div>
+    <input type="text" id="search-bar" placeholder="Search files...">
+  </div>
+
+
+
+<!--------------------->
+<!-- Navigation Pane -->
+<!--------------------->
+  <div id="nav-pane">
+    <div id="nav-controls">
+      <button id="toggle-nav">Hide Nav</button>
+      <button id="up-button">Up</button>
+    </div>
+    <div id="nav-current"></div>
+    <ul id="tree-list">
+      <!-- Navigation tree will appear here -->
+    </ul>
+  </div>
+
+  <!-- Hidden Directory Picker (webkitdirectory supported in some browsers) -->
+  <input type="file" id="directory-picker" webkitdirectory directory multiple style="display:none;">
+
+
+
+<!--------------------->
+<!-- Thumbnails Area -->
+<!--------------------->
+  <div id="thumbnails-container">
+    <!-- Thumbnails loaded dynamically here -->
+  </div>
+
+
+
+<!------------------------>
+<!-- Instruction Tables -->
+<!------------------------>
+  <!-- Instruction Tables in Tabs -->
+  <div id="instructions">
+    <h1>Instructions</h1>
+    <input type="radio" id="tab1" name="tabs" checked>
+    <input type="radio" id="tab2" name="tabs">
+    <input type="radio" id="tab3" name="tabs">
+    <input type="radio" id="tab4" name="tabs">
+    <div class="tab-headers">
+      <label for="tab1">Main Top Controls</label>
+      <label for="tab2">Navigation Panel</label>
+      <label for="tab3">Thumbnail Controls</label>
+      <label for="tab4">Full-Screen Controls</label>
+    </div>
+    <div class="tab-content" id="content1">
+      <table class="instruction-table">
+        <tr>
+          <th style="padding: 0px; margin: 0px;">Hover<br>&#8681;</th>
+          <th colspan="2">Main Top Controls</th>
+        </tr>
+        <tr data-target="directory-button">
+          <td><span class="hover-container">Directory Button</span></td>
+          <td>Select a directory to load. Will be parent directory in Nav pane.</td>
+        </tr>
+        <tr data-target="view-toggle">
+          <td><span class="hover-container">Image/Video Toggle</span></td>
+          <td>Filter loaded files to show only images or videos</td>
+        </tr>
+        <tr data-target="directory-info">
+          <td><span class="hover-container">Loaded/Total Info</span></td>
+          <td>Displays the number of loaded thumbnails in memory (max 700) vs total images in directory.</td>
+        </tr>
+        <tr data-target="thumbnail-size">
+          <td><span class="hover-container">Thumbnail Slider</span></td>
+          <td>Adjusts the size of the image or video thumbnails.</td>
+        </tr>
+        <tr data-target="progress-bar">
+          <td><span class="hover-container">Navigation/Progress Bar</span></td>
+          <td>Shows current location inside the directory (0 - 100%).</td>
+        </tr>
+        <tr data-target="search-bar">
+          <td><span class="hover-container">Search Bar</span></td>
+          <td>Search the loaded directory.</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="tab-content" id="content2">
+      <table class="instruction-table">
+        <tr>
+          <th style="padding: 0px; margin: 0px;">Hover<br>&#8681;</th>
+          <th colspan="2">Navigation Panel</th>
+        </tr>
+        <tr data-target="toggle-nav">
+          <td><span class="hover-container">Hide Nav<br>Nav</span></td>
+          <td>Colapses the Navigation Panel out of the way.</td>
+        </tr>
+        <tr data-target="up-button">
+          <td><span class="hover-container">Up</span></td>
+          <td>Navigate to the parent directory.<br>Disabled when at the base directory.</td>
+        </tr>
+        <tr data-target="nav-current">
+          <td><span class="hover-container">Current Directory</span></td>
+          <td>Lists the name of current directory displayed.</td>
+        </tr>
+        <tr data-target="tree-list">
+          <td><span class="hover-container">Directory Tree</span></td>
+          <td>Lists the sub-directories located inside the current directory.<br>Click on a sub-directory to make it the current directory.</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="tab-content" id="content3">
+      <table class="instruction-table">
+        <tr>
+          <th colspan="2">Thumbnail Controls</th>
+        </tr>
+        <tr>
+        <tr>
+          <td>Left Click on Thumbnail</td>
+          <td>Open image in full-screen mode.<br>Mouse-over for 3 seconds for file info.</td>
+        </tr>
+        <tr data-target="progress-bar">
+          <td><span class="hover-container">Left Click on Navigation/Progress Bar</span></td>
+          <td>Clicking inside the progress bar navigates to that part of the directory.</td>
+        </tr>
+        <tr>
+          <td>Esc</td>
+          <td>Reloads the page.</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="tab-content" id="content4">
+      <table class="instruction-table">
+        <tr>
+          <th colspan="2">Full-Screen Controls</th>
+        </tr>
+        <tr>
+          <td>&#8656; Left Click</td>
+          <td>Navigate back to previous image.<br>HOLD for 1/2 second, MOVE cursor, then RELEASE to pan.</td>
+        </tr>
+        <tr>
+          <td>Right Click &#8658;</td>
+          <td>Navigate forward to next image.<br>If panning, right click to exit panning.</td>
+        </tr>
+        <tr>
+          <td>Scroll Wheel &#8661;</td>
+          <td>Zoom in/out.</td>
+        </tr>
+      </table>
+      <table class="instruction-table">
+        <tr>
+		  <td>&#8656; Left Arrow</td>
+		  <td>Navigate back to previous image.</td>
+        </tr>
+        <tr>
+		  <td>Right Arrow &#8658;</td>
+		  <td>Navigate forward to next image.</td>
+        </tr>
+		<tr>
+          <td>p</td>
+          <td>Enter/Exit panning mode.</td>
+        </tr>
+        <tr>
+          <td>Esc</td>
+          <td>Exit full-screen mode and return to Main page.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+
+
+<!----------------------------------------->
+<!-- Fullscreen Viewer (for images only) -->
+<!----------------------------------------->
+  <div id="fullscreen-viewer">
+    <img id="fullscreen-image" src="" alt="Full Screen">
+    <div id="fullscreen-controls">
+        <button id="slideshow-button">Start Slideshow</button>
+    </div>
+  </div>
+  
+  
+
+  <script>
+// Global Variables
+let allFilesOriginal = [];  // Complete file list from directory selection
+let filesData = [];         // Files for the current directory and view
+let currentView = "images"; // "images" or "videos"
+let baseDirectory = "";     // Top-level folder from the selection
+let currentDirectory = "";  // Current folder (starts as baseDirectory)
+let thumbnailSize = 225;    // Initial thumbnail size
+let isNavCollapsed = false;
+let currentFullscreenIndex = 0;
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let imageStart = { x: 0, y: 0 };
+let lastVisibleIndex = 0;  // Track the last visible thumbnail
+let totalProgress = 0;     // Track overall progress through directory
+let slideshowInterval = null; // Track the slideshow interval
+
+// Virtual scrolling variables
+const CHUNK_SIZE = 50;      // Number of items to load at once
+let currentChunk = 0;
+let isLoading = false;
+
+
+
+
+
+//////////////////
+// TOP SLIM BAR //
+//////////////////
+
+// Directory button – open file picker
+document.getElementById('directory-button').addEventListener('click', () => {
+  document.getElementById('directory-picker').click();
+});
+
+// Process directory selection
+document.getElementById('directory-picker').addEventListener('change', function(event) {
+  allFilesOriginal = Array.from(event.target.files);
+  //console.log("Files loaded:", allFilesOriginal.length);
+  if (allFilesOriginal.length > 0) {
+    baseDirectory = allFilesOriginal[0].webkitRelativePath.split('/')[0];
+    currentDirectory = baseDirectory;
+  }
+  resetProgressBar();
+  currentChunk = 0;
+  updateThumbnailsForCurrentDirectory();
+  buildDirectoryTree();
+});
+
+// Toggle Switch between Images and Videos
+document.getElementById('view-switch').addEventListener('change', (e) => {
+  currentView = e.target.checked ? "videos" : "images";
+  currentChunk = 0;
+  updateThumbnailsForCurrentDirectory();
+});
+
+
+
+// Slider controls thumbnail size
+document.getElementById('thumbnail-size').addEventListener('input', function() {
+  thumbnailSize = parseInt(this.value);
+  updateThumbnailSizes();
+});
+
+// Update thumbnail sizes
+function updateThumbnailSizes() {
+  document.querySelectorAll('.thumbnail').forEach(el => {
+    el.style.width = thumbnailSize + "px";
+    el.style.height = thumbnailSize + "px";
+  });
+}
+
+
+
+// Progress bar click handler
+document.getElementById('progress-bar').addEventListener('click', function(e) {
+  const rect = this.getBoundingClientRect();
+  const clickPercent = (e.clientX - rect.left) / rect.width;
+  const targetIndex = Math.floor(clickPercent * filesData.length);
+  const targetChunk = Math.floor(targetIndex / CHUNK_SIZE);
+  
+  // Load chunks up to the target if needed
+  while (currentChunk <= targetChunk) {
+    loadThumbnails();
+  }
+  
+  // Calculate the scroll position
+  const container = document.getElementById('thumbnails-container');
+  const thumbnails = container.getElementsByClassName('thumbnail');
+  for (let thumb of thumbnails) {
+    if (parseInt(thumb.dataset.index) === targetIndex) {
+      thumb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      break;
+    }
+  }
+});
+
+// Reset progress tracking when changing directories or views
+function resetProgressBar() {
+  document.getElementById('loaded-progress').style.width = "0%";
+  document.getElementById('progress-label').textContent = "0%";
+  lastVisibleIndex = 0;
+  totalProgress = 0;
+}
+
+// Reset progress bar helper
+function resetProgressBar() {
+  document.getElementById('loaded-progress').style.width = "0%";
+  document.getElementById('progress-label').textContent = "0%";
+}
+
+// Function to filter files based on the search term, current directory, and view
+function getFilteredFiles() {
+    const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+    let filesForDir = filterFilesForDirectory(currentDirectory);
+    if (searchTerm) {
+        filesForDir = filesForDir.filter(file => file.name.toLowerCase().includes(searchTerm));
+    }
+    return filesForDir.filter(file => {
+        return currentView === "images" 
+            ? file.type.startsWith("image/") 
+            : file.type.startsWith("video/");
+    });
+}
+
+// Add an event listener to the search bar to update thumbnails when the user types
+document.getElementById('search-bar').addEventListener('input', function() {
+    updateThumbnailsForCurrentDirectory();
+});
+
+
+
+
+/////////////////////
+// NAVIGATION PANE //
+/////////////////////
+
+// Build directory tree
+function buildDirectoryTree() {
+  const treeList = document.getElementById('tree-list');
+  treeList.innerHTML = '';
+  document.getElementById("up-button").disabled = currentDirectory === baseDirectory;
+  
+  let directories = new Set();
+  
+  // Step 1: Identify sub-directories by checking for paths with deeper levels
+  allFilesOriginal.forEach(file => {
+    let relPath = file.webkitRelativePath;
+    if (relPath.startsWith(currentDirectory + "/")) {
+      let remainder = relPath.slice((currentDirectory + "/").length);
+      let parts = remainder.split('/');
+      // Only add if it’s a directory (has sub-levels)
+      if (parts.length > 1 && parts[0]) {
+        directories.add(parts[0]);
+      }
+    }
+  });
+  
+  // Step 2: Populate the tree with sorted sub-directories
+  Array.from(directories).sort().forEach(subdir => {
+    let li = document.createElement('li');
+    
+    // Create folder icon SVG
+    const svgNS = "http://www.w3.org/2000/svg";
+    let svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    let path = document.createElementNS(svgNS, "path");
+    path.setAttribute("d", "M2 4h4l2 2h6v8H2z");
+    path.setAttribute("fill", "#fff");
+    svg.appendChild(path);
+    
+    li.appendChild(svg);
+    li.appendChild(document.createTextNode(" " + subdir));
+    
+    li.addEventListener('click', () => {
+      currentDirectory = `${currentDirectory}/${subdir}`;
+      currentChunk = 0;
+      resetProgressBar();
+      updateThumbnailsForCurrentDirectory();
+      buildDirectoryTree();
+      document.getElementById('nav-current').textContent = currentDirectory.split('/').pop();
+    });
+    
+    treeList.appendChild(li);
+  });
+}
+
+// Handle Navigation Panel collapse/expand
+document.getElementById('toggle-nav').addEventListener('click', () => {
+	//console.log("Toggle Nav clicked");
+  const nav = document.getElementById('nav-pane');
+  const thumbContainer = document.getElementById('thumbnails-container');
+  const toggleBtn = document.getElementById('toggle-nav');
+  
+  isNavCollapsed = !isNavCollapsed;  // Toggle state
+  
+  if (isNavCollapsed) {
+    nav.classList.add('collapsed');
+    thumbContainer.classList.add('nav-collapsed');
+    toggleBtn.textContent = "Nav";
+    toggleBtn.style.width = "50px";
+    document.getElementById('up-button').style.display = 'none';
+    document.getElementById('nav-current').style.display = 'none';
+    document.getElementById('tree-list').style.display = 'none';
+  } else {
+    nav.classList.remove('collapsed');
+    thumbContainer.classList.remove('nav-collapsed');
+    toggleBtn.textContent = "Hide Nav";
+    toggleBtn.style.width = "40%";
+    document.getElementById('up-button').style.display = 'block';
+    document.getElementById('nav-current').style.display = 'block';
+    document.getElementById('tree-list').style.display = 'block';
+  }
+});
+
+// Handle "Up" button navigation
+document.getElementById('up-button').addEventListener('click', () => {
+	//console.log("Up clicked");
+  if (currentDirectory !== baseDirectory) {
+    let parts = currentDirectory.split('/');
+    parts.pop();  // Remove the last directory component
+    currentDirectory = parts.join('/');
+    
+    // Reset view state
+    currentChunk = 0;
+    resetProgressBar();
+    
+    // Update display
+    updateThumbnailsForCurrentDirectory();
+    buildDirectoryTree();
+    
+    // Update current directory display
+    document.getElementById('nav-current').textContent = currentDirectory.split('/').pop();
+    
+    // Update Up button state
+    document.getElementById('up-button').disabled = currentDirectory === baseDirectory;
+  }
+});
+
+// Helper function to get filtered files for the current directory
+function filterFilesForDirectory(directory) {
+  return allFilesOriginal.filter(file => {
+    const relPath = file.webkitRelativePath;
+    if (!relPath.startsWith(directory + "/")) return false;
+    
+    // Only include files directly in this directory, not in subdirectories
+    const remainder = relPath.slice((directory + "/").length);
+    return !remainder.includes('/');
+  });
+}
+
+
+
+
+
+////////////////////
+// THUMBNAIL AREA //
+////////////////////
+
+// Create IntersectionObserver for lazy loading
+const lazyLoadObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const media = entry.target;
+      if (media.dataset.src) {
+        if (currentView === "images") {
+          media.src = media.dataset.src;
+        } else {
+          media.src = media.dataset.src;
+          media.load(); // For video elements
+        }
+        media.classList.add('loaded');
+        lazyLoadObserver.unobserve(media);
+      }
+    }
+  });
+}, {
+  rootMargin: '50px 0px',
+  threshold: 0.1
+});
+
+
+// Update thumbnails for current directory and view
+function updateThumbnailsForCurrentDirectory() {
+    filesData = getFilteredFiles();
+    if (filesData.length > 0) {
+        document.getElementById('instructions').style.display = "none";
+    } else {
+        document.getElementById('instructions').style.display = "block";
+    }
+    const container = document.getElementById('thumbnails-container');
+    container.innerHTML = '';
+    currentChunk = 0;
+    isLoading = false;
+    loadThumbnails();
+}
+
+// Load thumbnails in chunks with lazy loading
+function loadThumbnails() {
+  const container = document.getElementById('thumbnails-container');
+  const startIndex = currentChunk * CHUNK_SIZE;
+  const endIndex = Math.min(startIndex + CHUNK_SIZE, filesData.length);
+  
+  for (let i = startIndex; i < endIndex; i++) {
+    const file = filesData[i];
+    const url = URL.createObjectURL(file);
+    let mediaEl;
+    
+    if (currentView === "images") {
+      mediaEl = document.createElement('img');
+      mediaEl.addEventListener('click', () => openFullscreen(i));
+    } else {
+      mediaEl = document.createElement('video');
+      mediaEl.controls = true;
+    }
+    
+    mediaEl.classList.add('thumbnail', 'lazy');
+    mediaEl.dataset.src = url;
+    mediaEl.dataset.index = i;  
+    mediaEl.style.width = thumbnailSize + "px";
+    mediaEl.style.height = thumbnailSize + "px";
+  
+    // Create a wrapper for both the media element and tooltip
+    const wrapper = document.createElement('div');
+    wrapper.style.position = "relative";
+    wrapper.style.display = "inline-block";
+    
+    // Append the media element to the wrapper
+    wrapper.appendChild(mediaEl);
+    
+    // Create and append the tooltip element
+    const tooltip = document.createElement('div');
+    tooltip.className = "file-info-tooltip";
+    wrapper.appendChild(tooltip);
+    
+    // Set up hover events with a 3-second delay to show the tooltip
+    let hoverTimer = null;
+    wrapper.addEventListener('mouseenter', function() {
+      hoverTimer = setTimeout(() => {
+        tooltip.textContent = getFileInfo(file, mediaEl);
+        tooltip.style.display = "block";
+      }, 3000);
+    });
+    
+    // Hide tooltip immediately on mouse leave
+    wrapper.addEventListener('mouseleave', function() {
+      clearTimeout(hoverTimer);
+      tooltip.style.display = "none";
+    });
+    
+    // Append the wrapper (instead of mediaEl directly) to the thumbnails container
+    container.appendChild(wrapper);
+    lazyLoadObserver.observe(mediaEl);
+  }
+  
+  document.getElementById('directory-info').textContent = 
+    Math.min(endIndex, filesData.length) + " / " + filesData.length;
+  
+  currentChunk++;
+  isLoading = false;
+}
+
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024,
+        dm = decimals < 0 ? 0 : decimals,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function getFileInfo(file, mediaEl) {
+  let info = "Name: " + file.name + "\n";
+  info += "Size: " + formatBytes(file.size) + "\n";
+  
+  // For images
+  if (mediaEl.tagName.toLowerCase() === "img") {
+    info += "Dimensions: " + (mediaEl.naturalWidth || "N/A") + "x" + (mediaEl.naturalHeight || "N/A") + "\n";
+  } 
+  // For videos
+  else if (mediaEl.tagName.toLowerCase() === "video") {
+    info += "Dimensions: " + (mediaEl.videoWidth || "N/A") + "x" + (mediaEl.videoHeight || "N/A") + "\n";
+  }
+  
+  let date = new Date(file.lastModified);
+  info += "Date: " + date.toLocaleDateString();
+  return info;
+}
+
+
+
+// Handle scroll events for infinite loading and progress bar
+function handleScroll(e) {
+  const container = e.target;
+  const scrollPosition = container.scrollTop + container.clientHeight;
+  const totalHeight = container.scrollHeight;
+  
+  // Find the last visible thumbnail
+  const thumbnails = container.getElementsByClassName('thumbnail');
+  for (let i = 0; i < thumbnails.length; i++) {
+    const thumb = thumbnails[i];
+    const rect = thumb.getBoundingClientRect();
+    if (rect.top <= window.innerHeight && rect.bottom >= 0) {
+      // Calculate the actual index in the full directory
+      const thumbIndex = parseInt(thumb.dataset.index);
+      if (!isNaN(thumbIndex)) {
+        lastVisibleIndex = thumbIndex;
+      }
+    }
+  }
+  
+  // Calculate true progress through the directory
+  totalProgress = (lastVisibleIndex / (filesData.length - 1)) * 100;
+  
+  // Update progress bar
+  document.getElementById('loaded-progress').style.width = totalProgress + "%";
+  document.getElementById('progress-label').textContent = Math.round(totalProgress) + "%";
+  
+  // Check if we need to load more items
+  if (!isLoading && scrollPosition > totalHeight - 800 && currentChunk * CHUNK_SIZE < filesData.length) {
+    isLoading = true;
+    loadThumbnails();
+  }
+}
+
+// Add scroll event listener
+document.getElementById('thumbnails-container').addEventListener('scroll', handleScroll);
+
+
+
+//////////////////////
+// INSTRUCTION AREA //
+//////////////////////
+
+// Instructions hover effect
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.hover-container').forEach(function(container) {
+    container.addEventListener('mouseenter', function() {
+      this.classList.add('glow');
+      const targetId = this.closest('tr').getAttribute('data-target');
+      if (targetId) {
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.classList.add('glow');
+      }
+    });
+    
+    container.addEventListener('mouseleave', function() {
+      this.classList.remove('glow');
+      const targetId = this.closest('tr').getAttribute('data-target');
+      if (targetId) {
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) targetEl.classList.remove('glow');
+      }
+    });
+  });
+});
+
+
+
+
+///////////////////////
+// FULL-SCREEN MODE  //
+///////////////////////
+
+// Helper: Adjust image in full-screen
+function adjustImageFit(img) {
+  const vpWidth = window.innerWidth;
+  const vpHeight = window.innerHeight;
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  let scale = 1;
+  
+  if (ih >= iw) {
+    scale = vpHeight / ih;
+  } else {
+    scale = vpWidth / iw;
+    if (ih * scale > vpHeight) {
+      scale = vpHeight / ih;
+    }
+  }
+  
+  img.style.transform = `translate(0px, 0px) scale(${scale})`;
+  img.setAttribute('data-scale', scale);
+  img.setAttribute('data-tx', 0);
+  img.setAttribute('data-ty', 0);
+}
+
+// Open full-screen view
+function openFullscreen(index) {
+  isPanning = false;
+  panStart = { x: 0, y: 0 };
+  imageStart = { x: 0, y: 0 };
+
+  currentFullscreenIndex = index;
+  const viewer = document.getElementById('fullscreen-viewer');
+  const fullImage = document.getElementById('fullscreen-image');
+  const file = filesData[index];
+  fullImage.src = URL.createObjectURL(file);
+  viewer.style.display = 'flex';
+  
+  if (viewer.requestFullscreen) {
+    viewer.requestFullscreen().catch(() => {});
+  } else if (viewer.webkitRequestFullscreen) {
+    viewer.webkitRequestFullscreen();
+  }
+  
+  fullImage.onload = () => adjustImageFit(fullImage);
+}
+
+// Fullscreen change handlers
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement) {
+    document.getElementById('fullscreen-viewer').style.display = 'none';
+    isPanning = false;
+    panStart = null;
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowInterval = null;
+        document.getElementById('slideshow-button').textContent = "Start Slideshow";
+    }
+  }
+});
+
+document.addEventListener("webkitfullscreenchange", () => {
+  if (!document.fullscreenElement) {
+    document.getElementById('fullscreen-viewer').style.display = 'none';
+    isPanning = false;
+    panStart = null;
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowInterval = null;
+        document.getElementById('slideshow-button').textContent = "Start Slideshow";
+    }
+  }
+});
+
+// Fullscreen navigation with mouse
+const fullscreenViewer = document.getElementById('fullscreen-viewer');
+fullscreenViewer.addEventListener('click', (e) => {
+  if (e.button === 0 && !isPanning) {
+    currentFullscreenIndex = (currentFullscreenIndex - 1 + filesData.length) % filesData.length;
+    openFullscreen(currentFullscreenIndex);
+  }
+});
+
+fullscreenViewer.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (!isPanning) {
+    currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
+    openFullscreen(currentFullscreenIndex);
+  } else {
+    const fullImage = document.getElementById('fullscreen-image');
+    fullImage.classList.remove("grabbing");
+    openFullscreen(currentFullscreenIndex);
+  }
+});
+
+// Fullscreen zoom handling
+fullscreenViewer.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const fullImage = document.getElementById('fullscreen-image');
+  let oldScale = parseFloat(fullImage.getAttribute('data-scale')) || 1;
+  let oldTx = parseFloat(fullImage.getAttribute('data-tx')) || 0;
+  let oldTy = parseFloat(fullImage.getAttribute('data-ty')) || 0;
+  let newScale = oldScale + e.deltaY * -0.001;
+  newScale = Math.min(Math.max(0.5, newScale), 3);
+  
+  const viewerRect = fullscreenViewer.getBoundingClientRect();
+  const centerX = viewerRect.width / 2;
+  const centerY = viewerRect.height / 2;
+  const mouseX = e.clientX - viewerRect.left;
+  const mouseY = e.clientY - viewerRect.top;
+  
+  let newTx, newTy;
+  if (newScale > oldScale) {
+    newTx = oldTx + (1 - newScale / oldScale) * (mouseX - centerX);
+    newTy = oldTy + (1 - newScale / oldScale) * (mouseY - centerY);
+  } else {
+    newTx = oldTx * (newScale / oldScale);
+    newTy = oldTy * (newScale / oldScale);
+  }
+  
+  fullImage.style.transform = `translate(${newTx}px, ${newTy}px) scale(${newScale})`;
+  fullImage.setAttribute('data-scale', newScale);
+  fullImage.setAttribute('data-tx', newTx);
+  fullImage.setAttribute('data-ty', newTy);
+});
+
+// Fullscreen panning
+const fullImage = document.getElementById('fullscreen-image');
+fullImage.addEventListener('mousedown', (e) => {
+  const holdTimeout = setTimeout(() => {
+    isPanning = true;
+    panStart = { x: e.clientX, y: e.clientY };
+    const style = window.getComputedStyle(fullImage);
+    const matrix = new DOMMatrixReadOnly(style.transform);
+    imageStart = { x: matrix.m41, y: matrix.m42 };
+    fullImage.classList.add("grabbing");
+  }, 500);
+  
+  fullImage.addEventListener('mouseup', () => {
+    clearTimeout(holdTimeout);
+    isPanning = false;
+    fullImage.classList.remove("grabbing");
+  }, { once: true });
+});
+
+fullImage.addEventListener('mousemove', (e) => {
+    if (isPanning) {
+        if (!panStart) {
+            panStart = { x: e.clientX, y: e.clientY };
+            const style = window.getComputedStyle(fullImage);
+            const matrix = new DOMMatrixReadOnly(style.transform);
+            imageStart = { x: matrix.m41, y: matrix.m42 };
+        }
+        let dx = e.clientX - panStart.x;
+        let dy = e.clientY - panStart.y;
+        const currentScale = parseFloat(fullImage.getAttribute('data-scale')) || 1;
+        let newTx = imageStart.x + dx;
+        let newTy = imageStart.y + dy;
+        fullImage.style.transform = `translate(${newTx}px, ${newTy}px) scale(${currentScale})`;
+        fullImage.setAttribute('data-tx', newTx);
+        fullImage.setAttribute('data-ty', newTy);
+    } else {
+        panStart = null;
+    }
+});
+
+// Window resize handler
+window.addEventListener('resize', () => {
+  if (document.getElementById('fullscreen-viewer').style.display === 'flex') {
+    const fullImage = document.getElementById('fullscreen-image');
+    if (fullImage.complete) {
+      adjustImageFit(fullImage);
+    }
+  }
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  const fullscreenViewer = document.getElementById('fullscreen-viewer');
+  
+  if (fullscreenViewer.style.display === 'flex') {
+    switch(e.key) {
+      case "ArrowLeft":
+        e.preventDefault();
+        currentFullscreenIndex = (currentFullscreenIndex - 1 + filesData.length) % filesData.length;
+        openFullscreen(currentFullscreenIndex);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
+        openFullscreen(currentFullscreenIndex);
+        break;
+      case "Escape":
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+        fullscreenViewer.style.display = 'none';
+        break;
+      case "p":
+		if (isPanning) {
+          isPanning = false;
+          fullImage.classList.remove("grabbing");
+          panStart = null;
+		} else {
+          isPanning = true;
+          fullImage.classList.add("grabbing");
+          // panStart will be set on mousemove
+		}
+		break;
+    }
+  } else if (e.key === "Escape") {
+    location.reload();
+  }
+});
+
+// Add an event listener to the slideshow button to start/stop the slideshow
+document.getElementById('slideshow-button').addEventListener('click', function() {
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+        slideshowInterval = null;
+        this.textContent = "Start Slideshow";
+    } else {
+        slideshowInterval = setInterval(() => {
+            currentFullscreenIndex = (currentFullscreenIndex + 1) % filesData.length;
+            openFullscreen(currentFullscreenIndex);
+        }, 5000); // 5 seconds per image
+        this.textContent = "Stop Slideshow";
+    }
+});
+  </script>
+</body>
+</html>
