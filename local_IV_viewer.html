@@ -687,12 +687,6 @@ function resetProgressBar() {
   totalProgress = 0;
 }
 
-// Reset progress bar helper
-function resetProgressBar() {
-  document.getElementById('loaded-progress').style.width = "0%";
-  document.getElementById('progress-label').textContent = "0%";
-}
-
 // Function to filter files based on the search term, current directory, and view
 function getFilteredFiles() {
     const searchTerm = document.getElementById('search-bar').value.toLowerCase();
